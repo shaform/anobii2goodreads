@@ -4,20 +4,22 @@ import csv
 import re
 import time
 
+import pyisbn
+
 from config import CONFIG
 
 
 class Anobii2GoodReads(object):
-    OUTPUT_HEADERS = ['Title', 'Author', 'Additional Authors', 'ISBN', 'My Rating', 'Publisher',
-            'Binding', 'Number of Pages', 'Year Published', 'Date Read', 'Date Added', 'Bookshelves', 'My Review', 'Private Notes']
-
+    OUTPUT_HEADERS = ['Title', 'Author', 'Additional Authors', 'ISBN',
+                      'My Rating', 'Publisher', 'Binding', 'Number of Pages',
+                      'Year Published', 'Date Read', 'Date Added',
+                      'Bookshelves', 'My Review', 'Private Notes']
 
     def _convert_linebreak(self, line):
         if line:
             return line.replace('\r\n', '\n').replace('\n', '<br>')
         else:
             return None
-
 
     def _convert_comment(self, title, content):
         if content:
@@ -29,10 +31,9 @@ class Anobii2GoodReads(object):
         else:
             return None
 
-
     def _convert_date(self, status):
         tokens = re.split(r'[, ]+', status)
-        year, month, day = None, 1, 1 
+        year, month, day = None, 1, 1
 
         if len(tokens[-1]) == 4 and tokens[-1].isdigit():
             year = tokens[-1]
@@ -41,13 +42,21 @@ class Anobii2GoodReads(object):
                 day = temp
                 temp = tokens[-3]
             month = {
-                    'Jan' : 1, 'Feb' : 2, 'Mar' : 3, 'Apr' : 4,
-                    'May' : 5, 'Jun' : 6, 'Jul' : 7, 'Aug' : 8,
-                    'Sep' : 9, 'Oct' : 10, 'Nov' : 11, 'Dec' : 12
-                    }.get(temp[:3], month)
+                'Jan': 1,
+                'Feb': 2,
+                'Mar': 3,
+                'Apr': 4,
+                'May': 5,
+                'Jun': 6,
+                'Jul': 7,
+                'Aug': 8,
+                'Sep': 9,
+                'Oct': 10,
+                'Nov': 11,
+                'Dec': 12
+            }.get(temp[:3], month)
             return '{}/{}/{}'.format(year, month, day)
         return None
-
 
     def _convert_status(self, status):
         bookshelves = []
@@ -76,7 +85,6 @@ class Anobii2GoodReads(object):
         else:
             return None, None, ['to-read']
 
-
     def convert_entry(self, entry):
         ISBN, TITLE, AUTHOR, FORMAT = 'ISBN', 'Title', 'Author', 'Format'
 
@@ -100,6 +108,13 @@ class Anobii2GoodReads(object):
         if isbn:
             isbn = isbn[1:-1]
 
+            if len(isbn) == 13 and self.use_isbn10:
+                try:
+                    isbn = pyisbn.convert(isbn)
+                except:
+                    # ignore inconvertible ISBNs
+                    pass
+
         publisher = entry.get(PUBLISHER)
         binding = entry.get(FORMAT)
         num_of_pages = entry.get(NUM_OF_PAGES)
@@ -117,27 +132,39 @@ class Anobii2GoodReads(object):
         # bookshelve
         else:
             my_rating = entry.get(STARS)
-            my_review = self._convert_comment(entry.get(COMMENT_TITLE), entry.get(COMMENT_CONTENT))
-            date_read, date_added, bookshelves = self._convert_status(entry.get(STATUS))
+            my_review = self._convert_comment(
+                entry.get(COMMENT_TITLE), entry.get(COMMENT_CONTENT))
+            date_read, date_added, bookshelves = self._convert_status(
+                entry.get(STATUS))
 
         return (title, author, additional_authors, isbn, my_rating, publisher,
-                binding, num_of_pages, year_published, date_read, date_added, ','.join(bookshelves), my_review, private_notes)
+                binding, num_of_pages, year_published, date_read, date_added,
+                ','.join(bookshelves), my_review, private_notes)
 
-
-    def __init__(self, *, detect_strings):
+    def __init__(self, *, detect_strings, use_isbn10):
         self.detect_strings = detect_strings
+        self.use_isbn10 = use_isbn10
 
 
 def parse_args():
-    parser = argparse.ArgumentParser(description='Convert Anobii csv to GoodReads csv.')
-#    parser.add_argument('-w', dest='wishlist', action='store_true',
-#            help='Process a wish list.')
-    parser.add_argument('-l', dest='lang', default=CONFIG['default_lang'],
-            help='Input language.')
-    parser.add_argument('input_file', metavar='anobii_csv',
-            help='Anobii CSV file')
-    parser.add_argument('output_file', metavar='goodreads_csv',
-            help='GreedReads CSV file export path')
+    parser = argparse.ArgumentParser(
+        description='Convert Anobii csv to GoodReads csv.')
+    # parser.add_argument('-w', dest='wishlist', action='store_true',
+    #                     help='Process a wish list.')
+    parser.add_argument('-l',
+                        dest='lang',
+                        default=CONFIG['default_lang'],
+                        help='Input language.')
+    parser.add_argument('-i',
+                        '--isbn10',
+                        action='store_true',
+                        help='Use ISBN-10.')
+    parser.add_argument('input_file',
+                        metavar='anobii_csv',
+                        help='Anobii CSV file')
+    parser.add_argument('output_file',
+                        metavar='goodreads_csv',
+                        help='GreedReads CSV file export path')
     return parser.parse_args()
 
 
@@ -147,18 +174,23 @@ def main():
     with open(args.input_file, newline='') as anobii_csv, open(args.output_file, 'w', newline='') as goodread_csv:
         anobii_reader = csv.DictReader(anobii_csv)
         goodreads_writer = csv.writer(goodread_csv)
-        a2g = Anobii2GoodReads(detect_strings=CONFIG['detect_strings'][args.lang])
+        a2g = Anobii2GoodReads(
+            detect_strings=CONFIG['detect_strings'][args.lang],
+            use_isbn10=args.isbn10)
 
         not_convertable = []
         goodreads_writer.writerow(a2g.OUTPUT_HEADERS)
         for entry in anobii_reader:
-            if entry.get('ISBN') is None:
+            isbn13 = entry.get('ISBN')
+            if isbn13 is None:
                 not_convertable.append(entry)
+
             goodreads_writer.writerow(a2g.convert_entry(entry))
 
         print('Conversion done.')
         if len(not_convertable) > 0:
             print('{} entries not convertable.'.format(len(not_convertable)))
+
 
 if __name__ == '__main__':
     main()
