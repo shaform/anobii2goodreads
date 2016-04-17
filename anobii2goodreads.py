@@ -137,13 +137,23 @@ class Anobii2GoodReads(object):
             date_read, date_added, bookshelves = self._convert_status(
                 entry.get(STATUS))
 
+        if self.only_isbn:
+            title = ''
+            author = ''
+            additional_authors = ''
+            publisher = ''
+            binding = ''
+            num_of_pages = ''
+            year_published = ''
+
         return (title, author, additional_authors, isbn, my_rating, publisher,
                 binding, num_of_pages, year_published, date_read, date_added,
                 ','.join(bookshelves), my_review, private_notes)
 
-    def __init__(self, *, detect_strings, use_isbn10):
+    def __init__(self, *, detect_strings, use_isbn10, only_isbn):
         self.detect_strings = detect_strings
         self.use_isbn10 = use_isbn10
+        self.only_isbn = only_isbn
 
 
 def parse_args():
@@ -159,6 +169,10 @@ def parse_args():
                         '--isbn10',
                         action='store_true',
                         help='Use ISBN-10.')
+    parser.add_argument('-o',
+                        '--only-isbn',
+                        action='store_true',
+                        help='Use only ISBN.')
     parser.add_argument('input_file',
                         metavar='anobii_csv',
                         help='Anobii CSV file')
@@ -176,20 +190,25 @@ def main():
         goodreads_writer = csv.writer(goodread_csv)
         a2g = Anobii2GoodReads(
             detect_strings=CONFIG['detect_strings'][args.lang],
-            use_isbn10=args.isbn10)
+            use_isbn10=args.isbn10,
+            only_isbn=args.only_isbn)
 
         not_convertable = []
         goodreads_writer.writerow(a2g.OUTPUT_HEADERS)
         for entry in anobii_reader:
             isbn13 = entry.get('ISBN')
-            if isbn13 is None:
+            if not isbn13:
                 not_convertable.append(entry)
+                if args.only_isbn:
+                    continue
 
             goodreads_writer.writerow(a2g.convert_entry(entry))
 
         print('Conversion done.')
         if len(not_convertable) > 0:
             print('{} entries not convertable.'.format(len(not_convertable)))
+            for entry in not_convertable:
+                print('{} by {}'.format(entry['Title'], entry['Author']))
 
 
 if __name__ == '__main__':
