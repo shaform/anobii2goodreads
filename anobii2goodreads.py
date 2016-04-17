@@ -11,9 +11,10 @@ from config import CONFIG
 
 class Anobii2GoodReads(object):
     OUTPUT_HEADERS = ['Title', 'Author', 'Additional Authors', 'ISBN',
-                      'My Rating', 'Publisher', 'Binding', 'Number of Pages',
-                      'Year Published', 'Date Read', 'Date Added',
-                      'Bookshelves', 'My Review', 'Private Notes']
+                      'ISBN13', 'My Rating', 'Publisher', 'Binding',
+                      'Number of Pages', 'Year Published', 'Date Read',
+                      'Date Added', 'Bookshelves', 'My Review',
+                      'Private Notes']
 
     def _convert_linebreak(self, line):
         if line:
@@ -104,16 +105,18 @@ class Anobii2GoodReads(object):
             if len(all_authors) > 1:
                 additional_authors = ', '.join(all_authors[1:])
 
-        isbn = entry.get(ISBN)
-        if isbn:
-            isbn = isbn[1:-1]
+        isbn13 = entry.get(ISBN)
+        isbn10 = None
+        if isbn13:
+            isbn13 = isbn13[1:-1]
+            try:
+                isbn10 = pyisbn.convert(isbn13)
 
-            if len(isbn) == 13 and self.use_isbn10:
-                try:
-                    isbn = pyisbn.convert(isbn)
-                except:
-                    # ignore inconvertible ISBNs
-                    pass
+                if len(isbn13) == 10 and len(isbn10) == 13:
+                    isbn13, isbn10 = isbn10, isbn13
+            except:
+                # ignore inconvertible ISBNs
+                pass
 
         publisher = entry.get(PUBLISHER)
         binding = entry.get(FORMAT)
@@ -146,13 +149,12 @@ class Anobii2GoodReads(object):
             num_of_pages = ''
             year_published = ''
 
-        return (title, author, additional_authors, isbn, my_rating, publisher,
-                binding, num_of_pages, year_published, date_read, date_added,
-                ','.join(bookshelves), my_review, private_notes)
+        return (title, author, additional_authors, isbn10, isbn13, my_rating,
+                publisher, binding, num_of_pages, year_published, date_read,
+                date_added, ','.join(bookshelves), my_review, private_notes)
 
-    def __init__(self, *, detect_strings, use_isbn10, only_isbn):
+    def __init__(self, *, detect_strings, only_isbn):
         self.detect_strings = detect_strings
-        self.use_isbn10 = use_isbn10
         self.only_isbn = only_isbn
 
 
@@ -165,10 +167,6 @@ def parse_args():
                         dest='lang',
                         default=CONFIG['default_lang'],
                         help='Input language.')
-    parser.add_argument('-i',
-                        '--isbn10',
-                        action='store_true',
-                        help='Use ISBN-10.')
     parser.add_argument('-o',
                         '--only-isbn',
                         action='store_true',
@@ -190,7 +188,6 @@ def main():
         goodreads_writer = csv.writer(goodread_csv)
         a2g = Anobii2GoodReads(
             detect_strings=CONFIG['detect_strings'][args.lang],
-            use_isbn10=args.isbn10,
             only_isbn=args.only_isbn)
 
         not_convertable = []
