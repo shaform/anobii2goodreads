@@ -212,8 +212,7 @@ def main():
             isbn13 = entry.get('ISBN')
             if not isbn13:
                 not_convertable.append(entry)
-                if args.only_isbn:
-                    continue
+                continue
 
             goodreads_writer.writerow(a2g.convert_entry(entry))
 
