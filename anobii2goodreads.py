@@ -95,6 +95,20 @@ class Anobii2GoodReads(object):
 
         PRIORITY = 'Priority'
 
+        ISBN = self.headers[ISBN]
+        TITLE = self.headers[TITLE]
+        AUTHOR = self.headers[AUTHOR]
+        FORMAT = self.headers[FORMAT]
+        NUM_OF_PAGES = self.headers[NUM_OF_PAGES]
+        PUBLISHER = self.headers[PUBLISHER]
+        PUB_DATE = self.headers[PUB_DATE]
+        PRIVATE_NOTE = self.headers[PRIVATE_NOTE]
+        COMMENT_TITLE = self.headers[COMMENT_TITLE]
+        COMMENT_CONTENT = self.headers[COMMENT_CONTENT]
+        STATUS = self.headers[STATUS]
+        STARS = self.headers[STARS]
+        PRIORITY = self.headers[PRIORITY]
+
         title = entry.get(TITLE)
 
         author, additional_authors = None, None
@@ -153,8 +167,9 @@ class Anobii2GoodReads(object):
                 publisher, binding, num_of_pages, year_published, date_read,
                 date_added, ','.join(bookshelves), my_review, private_notes)
 
-    def __init__(self, *, detect_strings, only_isbn):
+    def __init__(self, *, detect_strings, headers, only_isbn):
         self.detect_strings = detect_strings
+        self.headers = headers
         self.only_isbn = only_isbn
 
 
@@ -188,6 +203,7 @@ def main():
         goodreads_writer = csv.writer(goodread_csv)
         a2g = Anobii2GoodReads(
             detect_strings=CONFIG['detect_strings'][args.lang],
+            headers=CONFIG['headers'][args.lang],
             only_isbn=args.only_isbn)
 
         not_convertable = []
