@@ -94,9 +94,12 @@ def get_all_missing_entries(path, all_isbns):
             correct_isbns = isbn13 and len(isbn13) == 13 and isbn10 and len(
                 isbn10) == 10
             required_data = title and author
-            if not correct_isbns or not required_data:
+            if correct_isbns and (isbn10 in all_isbns or isbn13 in all_isbns):
+                # already present
+                pass
+            elif not correct_isbns or not required_data:
                 skipped.append(entry)
-            elif isbn10 not in all_isbns and isbn13 not in all_isbns:
+            else:
                 entries.append(entry)
 
     return entries, skipped
@@ -118,7 +121,7 @@ def add_to_goodreads(entries, cookies):
                                params={'q': isbn13},
                                cookies=cookies)
 
-        if 'No results' not in req.content.decode('utf8'):
+        if req.url.startswith('https://www.goodreads.com/book/show/'):
             print('{} by {} ({}/{}) duplicate by search'.format(
                 title, author, isbn10, isbn13))
             duplicate.append(entry)
@@ -166,7 +169,7 @@ def add_to_goodreads(entries, cookies):
         link = page.find('a', {'class': 'bookTitle'})
         if link is not None:
             link = 'https://www.goodreads.com{}'.format(link['href'])
-            print('success: '.format(link))
+            print('success: {}'.format(link))
             success.append(entry)
         else:
             if 'is taken by an existing book' in page.text:
@@ -206,8 +209,9 @@ def main():
 
         if len(duplicate) > 0:
             print('== {} files already present =='.format(len(duplicate)))
-            for r in success:
-                print('added: {} by {} ({}/{})'.format(r[0], r[1], r[2], r[3]))
+            for r in duplicate:
+                print('duplicate: {} by {} ({}/{})'.format(r[0], r[1], r[2], r[
+                    3]))
 
     if len(skipped) > 0:
         print('== {} files skipped due to missing data =='.format(len(
