@@ -175,7 +175,7 @@ class Anobii2GoodReads(object):
 
 def parse_args():
     parser = argparse.ArgumentParser(
-        description='Convert Anobii csv to GoodReads csv.')
+        description='Convert aNobii csv to GoodReads csv.')
     # parser.add_argument('-w', dest='wishlist', action='store_true',
     #                     help='Process a wish list.')
     parser.add_argument('-l',
@@ -188,7 +188,7 @@ def parse_args():
                         help='Use only ISBN.')
     parser.add_argument('input_file',
                         metavar='anobii_csv',
-                        help='Anobii CSV file')
+                        help='aNobii CSV file')
     parser.add_argument('output_file',
                         metavar='goodreads_csv',
                         help='GreedReads CSV file export path')
