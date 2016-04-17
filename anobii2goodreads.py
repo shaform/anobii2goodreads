@@ -88,7 +88,7 @@ class Anobii2GoodReads(object):
     def convert_entry(self, entry):
         ISBN, TITLE, AUTHOR, FORMAT = 'ISBN', 'Title', 'Author', 'Format'
 
-        NUM_OF_PAGES, PUBLISHER, PUB_DATE, PRIVATE_NOTE = 'Num of pages', 'Publisher', 'Publication date', 'Private Note'
+        NUM_OF_PAGES, PUBLISHER, PUB_DATE, PRIVATE_NOTE = 'Number of pages', 'Publisher', 'Publication date', 'Private Note'
 
         COMMENT_TITLE, COMMENT_CONTENT, STATUS, STARS = 'Comment title', 'Comment content', 'Status', 'Stars'
 
