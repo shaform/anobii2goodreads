@@ -10,4 +10,16 @@ Inspired by https://github.com/tijs/Anobii2Goodreads.
 Usage
 =====
 
-    python3 anobii2goodreads.py anobii.csv goodreads.csv
+To convert `anobii.csv` to `anobii_converted.csv`:
+
+    python3 anobii2goodreads.py [-l LANG] [-o] anobii.csv anobii_converted.csv
+
+    -o is used to clear data such as title and author to prevent Goodreads from auto-matching books that may have different ISBNs.
+
+`anobii_converted.csv` could be used to import to Goodreads.
+
+Sometimes, certain books may not be present in the Goodreads database. In that case, export your Goodreads bookshelf as `goodreads_exported.csv` to see what have been imported, and use `auto_add.py` to add the non-imported books:
+
+    python3 auto_add.py -c COOKIE_JSON -a anobii_converted.csv -g goodreads_exported.csv
+
+You'll need your session cookie from your browser to access Goodreads from `auto_add.py`.
