@@ -109,7 +109,6 @@ def add_to_goodreads(entries, cookies):
         (title, author, isbn10, isbn13, publisher, num_of_pages, pub_year,
          pub_month, pub_day) = entry
 
-        continue
         # obtain authenticity_token
         req = requests.request('get', url, cookies=cookies)
         page = bs(req.content)
@@ -134,17 +133,16 @@ def add_to_goodreads(entries, cookies):
             payload['book[num_pages]'] = num_of_pages
 
         if pub_year:
-            payload['book[publication_day]'] = pub_year
+            payload['book[publication_year]'] = pub_year
 
         if pub_month:
             payload['book[publication_month]'] = pub_month
 
         if pub_day:
-            payload['book[publication_year]]'] = pub_day
+            payload['book[publication_day]]'] = pub_day
 
         print(payload)
 
-        continue
         # send request
         req = requests.post(url, payload, cookies=cookies)
 
