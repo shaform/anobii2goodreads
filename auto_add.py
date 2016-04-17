@@ -9,9 +9,9 @@ import requests
 from bs4 import BeautifulSoup as bs
 
 
-def random_wait():
-    offset = random.randint(1, 5)
-    time.sleep(10 + offset)
+def random_wait(how_long=5):
+    offset = random.randint(1, how_long)
+    time.sleep(how_long * 2 + offset)
 
 
 def parse_args():
@@ -29,8 +29,11 @@ def parse_args():
     parser.add_argument(
         '-g',
         '--goodreads-csv',
-        help='GreedReads CSV export file to compare differences',
+        help='Goodreads CSV export file to compare differences',
         required=True)
+    parser.add_argument('--list-only',
+                        action='store_true',
+                        help='Only list books, do not actually add them')
     return parser.parse_args()
 
 
@@ -101,6 +104,7 @@ def get_all_missing_entries(path, all_isbns):
 
 def add_to_goodreads(entries, cookies):
     url = 'https://www.goodreads.com/book/new'
+    search_url = 'https://www.goodreads.com/search'
 
     success = []
     duplicate = []
@@ -108,6 +112,18 @@ def add_to_goodreads(entries, cookies):
     for entry in entries:
         (title, author, isbn10, isbn13, publisher, num_of_pages, pub_year,
          pub_month, pub_day) = entry
+
+        req = requests.request('get',
+                               search_url,
+                               params={'q': isbn13},
+                               cookies=cookies)
+
+        if 'No results' not in req.content.decode('utf8'):
+            print('{} by {} ({}/{}) duplicate by search'.format(
+                title, author, isbn10, isbn13))
+            duplicate.append(entry)
+            random_wait(2)
+            continue
 
         # obtain authenticity_token
         req = requests.request('get', url, cookies=cookies)
@@ -117,7 +133,6 @@ def add_to_goodreads(entries, cookies):
             'input', {'name': 'authenticity_token'})['value']
 
         # construct payload
-
         payload = {'utf8': '✓',
                    'authenticity_token': authenticity_token,
                    'book[title]': title,
@@ -178,17 +193,21 @@ def main():
     with open(args.cookie_json) as f:
         cookies = json.load(f)
 
-    success, duplicate = add_to_goodreads(entries, cookies)
+    if args.list_only:
+        for r in entries:
+            print('to add: {} by {} ({}/{})'.format(r[0], r[1], r[2], r[3]))
+    else:
+        success, duplicate = add_to_goodreads(entries, cookies)
 
-    if len(success) > 0:
-        print('== {} files added =='.format(len(success)))
-        for r in success:
-            print('added: {} by {} ({}/{})'.format(r[0], r[1], r[2], r[3]))
+        if len(success) > 0:
+            print('== {} files added =='.format(len(success)))
+            for r in success:
+                print('added: {} by {} ({}/{})'.format(r[0], r[1], r[2], r[3]))
 
-    if len(duplicate) > 0:
-        print('== {} files already present =='.format(len(duplicate)))
-        for r in success:
-            print('added: {} by {} ({}/{})'.format(r[0], r[1], r[2], r[3]))
+        if len(duplicate) > 0:
+            print('== {} files already present =='.format(len(duplicate)))
+            for r in success:
+                print('added: {} by {} ({}/{})'.format(r[0], r[1], r[2], r[3]))
 
     if len(skipped) > 0:
         print('== {} files skipped due to missing data =='.format(len(
