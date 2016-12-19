@@ -23,8 +23,7 @@ def main():
     if args.reverse:
         all_isbns = get_all_present_isbns_in_anobii(args.anobii_converted_csv)
 
-        with open(args.output,
-                  'w',
+        with open(args.output, 'w',
                   newline='') as outcsv, open(args.goodreads_csv,
                                               newline='') as incsv:
             reader = csv.reader(incsv)
@@ -40,8 +39,7 @@ def main():
     else:
         all_isbns = get_all_present_isbns(args.goodreads_csv)
 
-        with open(args.output,
-                  'w',
+        with open(args.output, 'w',
                   newline='') as outcsv, open(args.anobii_converted_csv,
                                               newline='') as incsv:
             reader = csv.reader(incsv)

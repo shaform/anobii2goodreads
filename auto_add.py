@@ -130,7 +130,7 @@ def add_to_goodreads(entries, cookies):
 
         # obtain authenticity_token
         req = requests.request('get', url, cookies=cookies)
-        page = bs(req.content, "html.parser")
+        page = bs(req.content, 'html.parser')
         book_form = page.find('form', {'id': 'bookForm'})
         authenticity_token = book_form.find(
             'input', {'name': 'authenticity_token'})['value']
@@ -165,7 +165,7 @@ def add_to_goodreads(entries, cookies):
         req = requests.post(url, payload, cookies=cookies)
 
         # check result
-        page = bs(req.content)
+        page = bs(req.content, 'html.parser')
         link = page.find('a', {'class': 'bookTitle'})
         if link is not None:
             link = 'https://www.goodreads.com{}'.format(link['href'])

@@ -2,7 +2,6 @@
 import argparse
 import csv
 import re
-import time
 
 import pyisbn
 
@@ -89,9 +88,11 @@ class Anobii2GoodReads(object):
     def convert_entry(self, entry):
         ISBN, TITLE, AUTHOR, FORMAT = 'ISBN', 'Title', 'Author', 'Format'
 
-        NUM_OF_PAGES, PUBLISHER, PUB_DATE, PRIVATE_NOTE = 'Number of pages', 'Publisher', 'Publication date', 'Private Note'
+        NUM_OF_PAGES, PRIVATE_NOTE = 'Number of pages', 'Private Note'
+        PUBLISHER, PUB_DATE = 'Publisher', 'Publication date'
 
-        COMMENT_TITLE, COMMENT_CONTENT, STATUS, STARS = 'Comment title', 'Comment content', 'Status', 'Stars'
+        COMMENT_TITLE, COMMENT_CONTENT = 'Comment title', 'Comment content'
+        STATUS, STARS = 'Status', 'Stars'
 
         PRIORITY = 'Priority'
 
@@ -145,7 +146,7 @@ class Anobii2GoodReads(object):
         # wishlist
         if PRIORITY in entry:
             bookshelves = ['to-read']
-            my_rating, my_review, date_read, date_added = None, None, None, None
+            my_rating = my_review = date_read = date_added = None
         # bookshelve
         else:
             my_rating = entry.get(STARS)
@@ -198,13 +199,13 @@ def parse_args():
 def main():
     args = parse_args()
 
-    with open(args.input_file, newline='') as anobii_csv, open(args.output_file, 'w', newline='') as goodread_csv:
+    with open(args.input_file, newline='') as anobii_csv, open(
+            args.output_file, 'w', newline='') as goodread_csv:
         anobii_reader = csv.DictReader(anobii_csv)
         goodreads_writer = csv.writer(goodread_csv)
         a2g = Anobii2GoodReads(
             detect_strings=CONFIG['detect_strings'][args.lang],
-            headers=CONFIG['headers'][args.lang],
-            only_isbn=args.only_isbn)
+            headers=CONFIG['headers'][args.lang], only_isbn=args.only_isbn)
 
         not_convertable = []
         goodreads_writer.writerow(a2g.OUTPUT_HEADERS)
