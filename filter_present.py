@@ -1,3 +1,4 @@
+"""Filter entries already present in Goodreads."""
 import argparse
 import csv
 
@@ -54,6 +55,7 @@ def main():
 
 
 def parse_args():
+    """Parse command line arguments."""
     parser = argparse.ArgumentParser(
         description='Filter already present books')
     parser.add_argument(

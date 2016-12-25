@@ -1,3 +1,4 @@
+"""Parse converted Goodreads csv and auto add them to Goodreads."""
 import argparse
 import csv
 import json

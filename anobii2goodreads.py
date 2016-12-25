@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
+"""Convert Anobii CSV to Goodreads CSV."""
 import argparse
 import csv
+import logging
 import re
 
 import pyisbn
@@ -9,29 +11,35 @@ from config import CONFIG
 
 
 class Anobii2GoodReads(object):
+    """Convert Anobii CSV to Goodreads CSV."""
+
     OUTPUT_HEADERS = ['Title', 'Author', 'Additional Authors', 'ISBN',
                       'ISBN13', 'My Rating', 'Publisher', 'Binding',
                       'Number of Pages', 'Year Published', 'Date Read',
                       'Date Added', 'Bookshelves', 'My Review',
                       'Private Notes']
 
-    def _convert_linebreak(self, line):
+    @staticmethod
+    def _convert_linebreak(line):
+        """Convert linkbreak in aNobii to HTML <br> tags."""
         if line:
             return line.replace('\r\n', '\n').replace('\n', '<br>')
         else:
             return None
 
-    def _convert_comment(self, title, content):
+    @staticmethod
+    def _convert_comment(title, content):
         if content:
-            content = self._convert_linebreak(content)
+            content = Anobii2GoodReads._convert_linebreak(content)
             if title:
-                print(title)
+                logging.debug('convert comment for %s', title)
                 content = '<p><b>{}</b></p>{}'.format(title.strip(), content)
             return content
         else:
             return None
 
-    def _convert_date(self, status):
+    @staticmethod
+    def _convert_date(status):
         tokens = re.split(r'[, ]+', status)
         year, month, day = None, 1, 1
 
@@ -58,32 +66,45 @@ class Anobii2GoodReads(object):
             return '{}/{}/{}'.format(year, month, day)
         return None
 
-    def _convert_status(self, status):
+    def _detect_status(self, date, text):
+        date_read, date_added = None, None
         bookshelves = []
+
+        if self.detect_strings['Not Started'] in text:
+            bookshelves = ['to-read']
+        elif self.detect_strings['Reading'] in text:
+            bookshelves.append('currently-reading')
+            date_added = date
+        elif self.detect_strings['Unfinished'] in text:
+            bookshelves = ['unfinished']
+            date_added = date
+        elif self.detect_strings['Finished'] in text:
+            bookshelves = ['read']
+            date_read = date
+        elif self.detect_strings['Reference'] in text:
+            bookshelves = ['reference']
+            date_added = date
+        elif self.detect_strings['Abandoned'] in text:
+            bookshelves = ['abandoned']
+            date_added = date
+
+        return date_read, date_added, bookshelves
+
+    def _convert_status(self, status, tags):
         if status:
             date = self._convert_date(status)
-            date_read, date_added = None, None
-            if self.detect_strings['Not Started'] in status:
-                bookshelves.append('to-read')
-            elif self.detect_strings['Reading'] in status:
-                bookshelves.append('currently-reading')
-                date_added = date
-            elif self.detect_strings['Unfinished'] in status:
-                bookshelves.append('unfinished')
-                date_added = date
-            elif self.detect_strings['Finished'] in status:
-                bookshelves.append('read')
-                date_read = date
-            elif self.detect_strings['Reference'] in status:
-                bookshelves.append('reference')
-                date_added = date
-            elif self.detect_strings['Abandoned'] in status:
-                bookshelves.append('abandoned')
-                date_added = date
+            if tags is not None:
+                tag_items = {tag.strip() for tag in tags.split('/')}
+            else:
+                tag_items = set()
+            if any(shelve_title in tag_items
+                   for shelve_title in self.detect_strings.values()):
+                return self._detect_status(date, tag_items)
 
-            return date_read, date_added, bookshelves
+            else:
+                return self._detect_status(date, status)
         else:
-            return None, None, ['to-read']
+            return None, None, None, ['to-read']
 
     def convert_entry(self, entry):
         ISBN, TITLE, AUTHOR, FORMAT = 'ISBN', 'Title', 'Author', 'Format'
@@ -95,6 +116,8 @@ class Anobii2GoodReads(object):
         STATUS, STARS = 'Status', 'Stars'
 
         PRIORITY = 'Priority'
+
+        TAGS = 'Tags'
 
         ISBN = self.headers[ISBN]
         TITLE = self.headers[TITLE]
@@ -109,6 +132,7 @@ class Anobii2GoodReads(object):
         STATUS = self.headers[STATUS]
         STARS = self.headers[STARS]
         PRIORITY = self.headers[PRIORITY]
+        TAGS = self.headers[TAGS]
 
         title = entry.get(TITLE)
 
@@ -129,7 +153,7 @@ class Anobii2GoodReads(object):
 
                 if len(isbn13) == 10 and len(isbn10) == 13:
                     isbn13, isbn10 = isbn10, isbn13
-            except:
+            except pyisbn.IsbnError:
                 # ignore inconvertible ISBNs
                 pass
 
@@ -152,8 +176,14 @@ class Anobii2GoodReads(object):
             my_rating = entry.get(STARS)
             my_review = self._convert_comment(
                 entry.get(COMMENT_TITLE), entry.get(COMMENT_CONTENT))
-            date_read, date_added, bookshelves = self._convert_status(
-                entry.get(STATUS))
+
+            tags = entry.get(TAGS)
+            status = entry.get(STATUS)
+            date_read, date_added, bookshelves = self._convert_status(status,
+                                                                      tags)
+
+            if len(bookshelves) == 0:
+                logging.warning('cannot parse %s: %s', title, status)
 
         if self.only_isbn:
             title = ''
@@ -175,6 +205,7 @@ class Anobii2GoodReads(object):
 
 
 def parse_args():
+    """Parse command line arguments."""
     parser = argparse.ArgumentParser(
         description='Convert aNobii csv to GoodReads csv.')
     # parser.add_argument('-w', dest='wishlist', action='store_true',
@@ -197,6 +228,8 @@ def parse_args():
 
 
 def main():
+    """Convert Anobii CSV to Goodreads CSV."""
+    logging.basicConfig(level=logging.INFO)
     args = parse_args()
 
     with open(args.input_file, newline='') as anobii_csv, open(
@@ -217,11 +250,12 @@ def main():
 
             goodreads_writer.writerow(a2g.convert_entry(entry))
 
-        print('Conversion done.')
+        logging.info('Conversion done.')
         if len(not_convertable) > 0:
-            print('{} entries not convertable.'.format(len(not_convertable)))
+            logging.warning('%d entries not convertable.',
+                            len(not_convertable))
             for entry in not_convertable:
-                print('{} by {}'.format(entry['Title'], entry['Author']))
+                logging.warning('%s by %s', entry['Title'], entry['Author'])
 
 
 if __name__ == '__main__':

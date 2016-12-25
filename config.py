@@ -33,6 +33,7 @@ CONFIG = {
             'Status': 'Status',
             'Stars': 'Stars',
             'Priority': 'Priority',
+            'Tags': 'Tags',
         },
         'zh-tw': {
             'ISBN': 'ISBN',
@@ -48,6 +49,7 @@ CONFIG = {
             'Status': '狀態',
             'Stars': '評等',
             'Priority': '優先順序',
+            'Tags': '標籤',
         },
     }
 }
