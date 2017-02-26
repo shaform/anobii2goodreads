@@ -238,8 +238,11 @@ def main():
     logging.basicConfig(level=logging.INFO)
     args = parse_args()
 
-    with open(args.input_file, newline='') as anobii_csv, open(
-            args.output_file, 'w', newline='') as goodread_csv:
+    with open(args.input_file, newline='',
+              encoding='utf8') as anobii_csv, open(
+                  args.output_file,
+                  'w', newline='',
+                  encoding='utf8') as goodread_csv:
         anobii_reader = csv.DictReader(anobii_csv)
         goodreads_writer = csv.writer(goodread_csv)
         a2g = Anobii2GoodReads(

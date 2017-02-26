@@ -7,7 +7,7 @@ from auto_add import get_all_present_isbns
 
 def get_all_present_isbns_in_anobii(path):
     all_isbns = set()
-    with open(path, newline='') as incsv:
+    with open(path, newline='', encoding='utf8') as incsv:
         reader = csv.reader(incsv)
         # skip header
         next(reader)
@@ -25,8 +25,10 @@ def main():
         all_isbns = get_all_present_isbns_in_anobii(args.anobii_converted_csv)
 
         with open(args.output, 'w',
-                  newline='') as outcsv, open(args.goodreads_csv,
-                                              newline='') as incsv:
+                  newline='',
+                  encoding='utf8') as outcsv, open(args.goodreads_csv,
+                                                   newline='',
+                                                   encoding='utf8') as incsv:
             reader = csv.reader(incsv)
 
             rows = []
@@ -41,8 +43,10 @@ def main():
         all_isbns = get_all_present_isbns(args.goodreads_csv)
 
         with open(args.output, 'w',
-                  newline='') as outcsv, open(args.anobii_converted_csv,
-                                              newline='') as incsv:
+                  newline='',
+                  encoding='utf8') as outcsv, open(args.anobii_converted_csv,
+                                                   newline='',
+                                                   encoding='utf8') as incsv:
             reader = csv.reader(incsv)
 
             rows = []

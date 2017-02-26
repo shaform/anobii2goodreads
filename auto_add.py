@@ -40,7 +40,7 @@ def parse_args():
 
 def get_all_present_isbns(path):
     all_isbns = set()
-    with open(path, newline='') as goodread_csv:
+    with open(path, newline='', encoding='utf8') as goodread_csv:
         goodreads_reader = csv.DictReader(goodread_csv)
         for r in goodreads_reader:
             for name in ('ISBN', 'ISBN13'):
@@ -53,7 +53,7 @@ def get_all_present_isbns(path):
 def get_all_missing_entries(path, all_isbns):
     entries = []
     skipped = []
-    with open(path, newline='') as anobii_csv:
+    with open(path, newline='', encoding='utf8') as anobii_csv:
         anobii_reader = csv.DictReader(anobii_csv)
 
         for r in anobii_reader:
@@ -194,7 +194,7 @@ def main():
                                                all_isbns=all_isbns)
     print('== {} entries to add =='.format(len(entries)))
 
-    with open(args.cookie_json) as f:
+    with open(args.cookie_json, encoding='utf8') as f:
         cookies = json.load(f)
 
     if args.list_only:
