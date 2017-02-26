@@ -40,29 +40,35 @@ class Anobii2GoodReads(object):
 
     @staticmethod
     def _convert_date(status):
-        tokens = re.split(r'[, ]+', status)
+        nochinese = re.sub(u'[⺀-⺙⺛-⻳⼀-⿕々〇〡-〩〸-〺〻㐀-䶵一-鿃豈-鶴侮-頻並-龎]',
+                           '',
+                           status,
+                           flags=re.UNICODE)
+        tokens = re.split(r'[，, ]+', nochinese)
         year, month, day = None, 1, 1
 
         if len(tokens[-1]) == 4 and tokens[-1].isdigit():
             year = tokens[-1]
-            temp = tokens[-2]
-            if temp.isdigit():
-                day = temp
-                temp = tokens[-3]
-            month = {
-                'Jan': 1,
-                'Feb': 2,
-                'Mar': 3,
-                'Apr': 4,
-                'May': 5,
-                'Jun': 6,
-                'Jul': 7,
-                'Aug': 8,
-                'Sep': 9,
-                'Oct': 10,
-                'Nov': 11,
-                'Dec': 12
-            }.get(temp[:3], month)
+            if len(tokens) > 1:
+                temp = tokens[-2]
+                if temp.isdigit():
+                    day = temp
+                    if len(tokens) > 2:
+                        temp = tokens[-3]
+                month = {
+                    'Jan': 1,
+                    'Feb': 2,
+                    'Mar': 3,
+                    'Apr': 4,
+                    'May': 5,
+                    'Jun': 6,
+                    'Jul': 7,
+                    'Aug': 8,
+                    'Sep': 9,
+                    'Oct': 10,
+                    'Nov': 11,
+                    'Dec': 12
+                }.get(temp[:3], month)
             return '{}/{}/{}'.format(year, month, day)
         return None
 
@@ -163,7 +169,7 @@ class Anobii2GoodReads(object):
 
         year_published = entry.get(PUB_DATE)
         if year_published:
-            year_published = year_published[1:-1]
+            year_published = year_published[1:-1].replace('-', '/')
 
         private_notes = self._convert_linebreak(entry.get(PRIVATE_NOTE))
 
@@ -255,7 +261,8 @@ def main():
             logging.warning('%d entries not convertable.',
                             len(not_convertable))
             for entry in not_convertable:
-                logging.warning('%s by %s', entry['Title'], entry['Author'])
+                logging.warning('%s by %s', entry[a2g.headers['Title']],
+                                entry[a2g.headers['Author']])
 
 
 if __name__ == '__main__':
