@@ -219,11 +219,12 @@ def parse_args():
     parser.add_argument('-l',
                         dest='lang',
                         default=CONFIG['default_lang'],
+                        choices=tuple(CONFIG['detect_strings']),
                         help='Input language.')
     parser.add_argument('-o',
                         '--only-isbn',
                         action='store_true',
-                        help='Use only ISBN.')
+                        help='Keep only ISBN, discard book info.')
     parser.add_argument('input_file',
                         metavar='anobii_csv',
                         help='aNobii CSV file')

@@ -2,6 +2,7 @@
 import argparse
 import csv
 import json
+import logging
 import random
 import time
 
@@ -123,7 +124,7 @@ def add_to_goodreads(entries, cookies):
                                cookies=cookies)
 
         if req.url.startswith('https://www.goodreads.com/book/show/'):
-            print('{} by {} ({}/{}) duplicate by search'.format(
+            logging.warning('{} by {} ({}/{}) duplicate by search'.format(
                 title, author, isbn10, isbn13))
             duplicate.append(entry)
             random_wait(2)
@@ -170,14 +171,15 @@ def add_to_goodreads(entries, cookies):
         link = page.find('a', {'class': 'bookTitle'})
         if link is not None:
             link = 'https://www.goodreads.com{}'.format(link['href'])
-            print('success: {}'.format(link))
+            logging.warning('success: {}'.format(link))
             success.append(entry)
         else:
             if 'is taken by an existing book' in page.text:
-                print('duplicate')
+                logging.warning('duplicate')
                 duplicate.append(entry)
             else:
-                print('== error: stop processing to prevent bad things ==')
+                logging.warning(
+                    '== error: stop processing to prevent bad things ==')
                 break
 
         random_wait()
@@ -192,33 +194,37 @@ def main():
 
     entries, skipped = get_all_missing_entries(args.anobii_converted_csv,
                                                all_isbns=all_isbns)
-    print('== {} entries to add =='.format(len(entries)))
+    logging.warning('== {} entries to add =='.format(len(entries)))
 
     with open(args.cookie_json, encoding='utf8') as f:
         cookies = json.load(f)
 
     if args.list_only:
         for r in entries:
-            print('to add: {} by {} ({}/{})'.format(r[0], r[1], r[2], r[3]))
+            logging.warning('to add: {} by {} ({}/{})'.format(r[0], r[1], r[2],
+                                                              r[3]))
     else:
         success, duplicate = add_to_goodreads(entries, cookies)
 
         if len(success) > 0:
-            print('== {} files added =='.format(len(success)))
+            logging.warning('== {} files added =='.format(len(success)))
             for r in success:
-                print('added: {} by {} ({}/{})'.format(r[0], r[1], r[2], r[3]))
+                logging.warning('added: {} by {} ({}/{})'.format(r[0], r[1], r[
+                    2], r[3]))
 
         if len(duplicate) > 0:
-            print('== {} files already present =='.format(len(duplicate)))
+            logging.warning('== {} files already present =='.format(len(
+                duplicate)))
             for r in duplicate:
-                print('duplicate: {} by {} ({}/{})'.format(r[0], r[1], r[2], r[
-                    3]))
+                logging.warning('duplicate: {} by {} ({}/{})'.format(r[0], r[
+                    1], r[2], r[3]))
 
     if len(skipped) > 0:
-        print('== {} files skipped due to missing data =='.format(len(
-            skipped)))
+        logging.warning('== {} files skipped due to missing data =='.format(
+            len(skipped)))
         for r in skipped:
-            print('skipped: {} by {} ({}/{})'.format(r[0], r[1], r[2], r[3]))
+            logging.warning('skipped: {} by {} ({}/{})'.format(r[0], r[1], r[
+                2], r[3]))
 
 
 if __name__ == '__main__':

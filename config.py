@@ -1,3 +1,9 @@
+"""Config file for anobii2goodreads.py
+
+detect_strings: used to detect reading status
+headers: CSV headers
+"""
+
 CONFIG = {
     'default_lang': 'en',
     'detect_strings': {
