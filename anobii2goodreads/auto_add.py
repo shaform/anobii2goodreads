@@ -1,27 +1,24 @@
+#!/usr/bin/env python3
 """Parse converted Goodreads csv and auto add them to Goodreads."""
 import argparse
 import csv
 import json
 import logging
-import random
-import time
 
 import requests
 
 from bs4 import BeautifulSoup as bs
 
-
-def random_wait(how_long=5):
-    offset = random.randint(1, how_long)
-    time.sleep(how_long * 2 + offset)
+from utils import random_wait
 
 
 def parse_args():
+    """Parse command line arguments for auto_add."""
     parser = argparse.ArgumentParser(
         description='Automatically add new books to Goodreads.')
     parser.add_argument('-c',
                         '--cookie-json',
-                        help='Cookie file',
+                        help='Cookie file.',
                         required=True)
     parser.add_argument(
         '-a',
