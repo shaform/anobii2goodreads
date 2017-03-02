@@ -27,7 +27,7 @@ You'll need your session cookie from your browser to access Goodreads from `auto
 However, reading progress is not entirely preserved in the process. But it's still possible to obtain complete reading history by directly crawling aNobii website:
 
     cd anobiicrawl/
-    scrapy crawl progress -a visited=`CACHE_PATH_FOR_CRAWL` -a user=`YOUR_USER_NAME` -a login_path=anobii.login.json -o anobii_progress.jl
+    scrapy crawl progress -a visited=CACHE_PATH_FOR_CRAWL -a user=YOUR_USER_NAME -a login_path=anobii.login.json -o anobii_progress.jl
 
 Afterwards, we could update the reading dates for books on Goodreads:
 
