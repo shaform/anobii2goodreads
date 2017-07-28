@@ -16,7 +16,6 @@ class ProgressSpider(scrapy.Spider):
     allowed_domains = ['anobii.com']
 
     bookshelf_url = 'http://www.anobii.com/book_shelf_public_ajax?personId={user}'
-    book_edit_url = 'http://www.anobii.com/book_edit_ajax?page=book&fromShelf=1&productId={item_id_encrypted}'
     book_progress_url = 'http://www.anobii.com/anobiireload/c3/personal_book_reading/{item_id}/en'
     login_page = 'http://www.anobii.com/login'
     book_priority = 20
@@ -42,6 +41,7 @@ class ProgressSpider(scrapy.Spider):
             login_data = json.load(f)
         yield FormRequest.from_response(response,
                                         formdata=login_data,
+                                        formid='login-nav',
                                         callback=self.check_login)
 
     def parse_progress(self, response):
@@ -54,9 +54,9 @@ class ProgressSpider(scrapy.Spider):
         yield item
         self.visited[item['isbn13']] = ''
 
-    def parse_edit(self, response):
+    def parse_book(self, response):
         item_id = response.xpath(
-            '//input[@class="itemId"]/@value').extract_first()
+            '//input[@class="item_id"]/@value').extract_first()
         isbn13 = response.meta['isbn13']
         title = response.meta['title']
         self.logger.warning('process edit: %s / %s / %s', item_id, isbn13,
@@ -72,17 +72,17 @@ class ProgressSpider(scrapy.Spider):
     def parse(self, response):
         for tr in response.xpath('//table//tr[@class="item"]'):
             item_id_encrypted = tr.xpath('@id').extract_first()
-            book_url_tokens = tr.xpath('.//a/@href').extract_first().split('/')
+            book_url = tr.xpath('.//a/@href').extract_first()
+            book_url_tokens = book_url.split('/')
             isbn13 = book_url_tokens[-3]
             title = book_url_tokens[-4]
             self.logger.warning('%s: %s / %s', item_id_encrypted, isbn13,
                                 title)
 
             if isbn13 not in self.visited and isbn13:
-                url = ProgressSpider.book_edit_url.format(
-                    item_id_encrypted=item_id_encrypted)
+                url = response.urljoin(book_url)
                 yield scrapy.Request(url,
-                                     self.parse_edit,
+                                     self.parse_book,
                                      priority=ProgressSpider.book_priority,
                                      meta={'isbn13': isbn13,
                                            'title': title})
