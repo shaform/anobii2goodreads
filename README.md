@@ -7,6 +7,11 @@ the [import page](http://www.goodreads.com/review/import).
 
 Inspired by https://github.com/tijs/Anobii2Goodreads.
 
+Warning
+=======
+
+Since these scripts haven not been updated or tested for a long time, it's possible that aNobii & Goodreads have already changed their website, and the scripts might no longer work.
+
 Usage
 =====
 
